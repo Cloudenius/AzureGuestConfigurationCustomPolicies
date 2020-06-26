@@ -1,7 +1,7 @@
 <#
     .DESCRIPTION
     Use this script to gain an understanding about how packages are created. Run it line by line to understand what happens behind the scenes.
-    The script is based on commands found at https://docs.microsoft.com/en-us/azure/governance/policy/how-to/guest-configuration-create
+    The script is based on commands found at https://docs.microsoft.com/en-us/azure/governance/policy/how-to/guest-configuration-create-linux
 
     Before you start, make sure you have the following folder structure set up:
     / New-LinuxGuestConfigPolicy.ps1
