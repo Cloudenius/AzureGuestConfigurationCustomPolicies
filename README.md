@@ -1,7 +1,7 @@
 # Introduction
-The `New-GuestConfigPolicy.ps1` script will walk you through the process of creating and publishing a custom Guest Configuration policy. I hope this guide helps you to better understand how all the Guest Configuration cmdlets can be used to create Custom Guest Configuration policies. Please follow the instructions in the script.
+The `New-WindowsGuestConfigPolicy.ps1` and `New-LinuxGuestConfigPolicy.ps1` script will walk you through the process of creating and publishing a custom Guest Configuration policy. I hope this guide helps you to better understand how all the Guest Configuration cmdlets can be used to create Custom Guest Configuration policies. Please follow the instructions in the script.
 
-# Working with the end result
+# Working with the end result - Windows Guest Config Policy
 After executing the script line by line, you will have a Policy Initiative that contains the Deploy and Audit policy.
 
 ![](/Images/GuestConfigurationPolicyCreated.png)
