@@ -1,3 +1,7 @@
 /AuditWindowsService/CompiledPolicy
 /AuditWindowsService/Package
 /AuditWindowsService/PolicyDefinitions
+
+/AuditLinuxCronjob/CompiledPolicy
+/AuditLinuxCronjob/Package
+/AuditLinuxCronjob/PolicyDefinitions

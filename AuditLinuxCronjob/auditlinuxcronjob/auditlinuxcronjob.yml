@@ -1,0 +1,8 @@
+name: auditlinuxcronjob
+title: Audit Linux Cronjob
+maintainer: JVR
+summary: Audit Linux Cronjob
+license: MIT
+version: 1.0.0
+supports:
+    - os-family: unix

@@ -4,38 +4,39 @@
     The script is based on commands found at https://docs.microsoft.com/en-us/azure/governance/policy/how-to/guest-configuration-create
 
     Before you start, make sure you have the following folder structure set up:
-    / New-GuestConfigPolicy.ps1
-    / AuditWindowsServicePolicy / AuditWindowsService.ps1
+    / New-LinuxGuestConfigPolicy.ps1
+    / AuditLinuxCronjob / AuditLinuxCronjob.ps1
     
     By the end of the script, you should have the following folder structure:
-    / New-GuestConfigPolicy.ps1
-    / AuditWindowsServicePolicy / AuditWindowsService.ps1
+    / New-LinuxGuestConfigPolicy.ps1
+    / AuditLinuxCronjob / AuditLinuxCronjob.ps1
 
-    / AuditWindowsServicePolicy / CompiledPolicy / AuditWindowsService.mof
-    / AuditWindowsServicePolicy / Package / AuditWindowsService / AuditWindowsService.zip
-    / AuditWindowsServicePolicy / Package / AuditWindowsService / unzippedPackage / AuditWindowsService.mof
-    / AuditWindowsServicePolicy / Package / AuditWindowsService / unzippedPackage / Modules / **
-    / AuditWindowsServicePolicy / PolicyDefinitions / AuditIfNotExists.json
-    / AuditWindowsServicePolicy / PolicyDefinitions / DeployIfNotExists.json
-    / AuditWindowsServicePolicy / PolicyDefinitions / Initiative.json
+    / AuditLinuxCronjob / CompiledPolicy / AuditLinuxCronjob.mof
+    / AuditLinuxCronjob / Package / AuditLinuxCronjob / AuditLinuxCronjob.zip
+    / AuditLinuxCronjob / Package / AuditLinuxCronjob / unzippedPackage / AuditLinuxCronjob.mof
+    / AuditLinuxCronjob / Package / AuditLinuxCronjob / unzippedPackage / Modules / **
+    / AuditLinuxCronjob / PolicyDefinitions / AuditIfNotExists.json
+    / AuditLinuxCronjob / PolicyDefinitions / DeployIfNotExists.json
+    / AuditLinuxCronjob / PolicyDefinitions / Initiative.json
 #>
 
 # Before you start, make sure your terminal is in the directory of the script, the GuestConfigPolicyWithParams folder
 # Install the Guest Configuration module. I've tested this demo on 1.19.4
 Install-Module -Name GuestConfiguration -RequiredVersion 1.19.4
 
-# Run AuditWindowsService.ps1 first. You will now get the MOF file in AuditWindowsServicePolicy/CompiledPolicy directory
-.\AuditWindowsService\AuditWindowsService.ps1
+# Run AuditLinuxCronjob.ps1 first. You will now get the MOF file in AuditLinuxCronjob/CompiledPolicy directory
+.\AuditLinuxCronjob\AuditLinuxCronjob.ps1
 
-# The following cmdlet will create the policy package in the AuditWindowsService/Package folder. It will create the AuditWindowsService.zip file and also the unzippedPackage folder
+# The following cmdlet will create the policy package in the AuditLinuxCronjob/Package folder. It will create the AuditLinuxCronjob.zip file and also the unzippedPackage folder
 New-GuestConfigurationPackage `
-    -Name 'AuditWindowsService' `
-    -Configuration './AuditWindowsService/CompiledPolicy/AuditWindowsService.mof' `
-    -Path './AuditWindowsService/Package'
+    -Name 'AuditLinuxCronjob' `
+    -Configuration './AuditLinuxCronjob/CompiledPolicy/AuditLinuxCronjob.mof' `
+    -Path './AuditLinuxCronjob/Package' `
+    -ChefInspecProfilePath ./
 
 # We can now test the package to ensure it's valid. Run this on the same type of machine as the policy target machine
 Test-GuestConfigurationPackage `
-    -Path './AuditWindowsService/Package/AuditWindowsService/AuditWindowsService.zip' 
+    -Path './AuditLinuxCronjob/Package/AuditLinuxCronjob/AuditLinuxCronjob.zip' 
 
 # Now we need to upload the package to a Storage Account. We use the Publish-GuestConfigurationPackage function to accomplish this
 function Publish-GuestConfigPolicyPackageToStorage {
@@ -118,8 +119,8 @@ $uri = Publish-GuestConfigPolicyPackageToStorage `
     -resourceGroup $resourceGroupName `
     -storageAccountName $storageAccountName `
     -storageContainerName $containerName `
-    -filePath ./AuditWindowsService/Package/AuditWindowsService/AuditWindowsService.zip `
-    -blobName 'AuditWindowsService'
+    -filePath ./AuditLinuxCronjob/Package/AuditLinuxCronjob/AuditLinuxCronjob.zip `
+    -blobName 'AuditLinuxCronjob'
 
 # Test if the URI works
 if ((Invoke-WebRequest $uri).Statuscode -ne 200) {
@@ -128,29 +129,18 @@ if ((Invoke-WebRequest $uri).Statuscode -ne 200) {
 
 # Define the policy parameters that we want to add to the policy.
 # As I like JSON, I'm importing the variables in JSON but you can also uncomment the array below
-$policyParameters = Get-Content ./AuditWindowsService/PolicyParameters.json | ConvertFrom-Json -AsHashtable
+$policyParameters = Get-Content ./AuditLinuxCronjob/PolicyParameters.json | ConvertFrom-Json -AsHashtable
 
 <#
 $policyParameters = @(
     @{
-        Name = 'ServiceName'                                         # Policy parameter name (mandatory)
-        DisplayName = 'Windows service name'                         # Policy parameter display name (mandatory)
-        Description = "Name of the Windows service"                  # Policy parameter description (optional)
-        ResourceType = "Service"                                     # DSC configuration resource type (mandatory). Get this value from the AuditWindowsService.ps1 file.
-        ResourceId = 'Ensure Windows service is in a desired state'  # DSC configuration resource property name (mandatory). Get this value from the AuditWindowsService.ps1 file.
-        ResourcePropertyName = "Name"                                # DSC configuration resource property name (mandatory). Get this value from the AuditWindowsService.ps1 file.
-        DefaultValue = 'winrm'                                       # Policy parameter default value (optional)
-        AllowedValues = @('BDESVC','TermService','wuauserv','winrm') # Policy parameter allowed values (optional)
-    },
-    @{
-        Name = 'ServiceStartupType'                                  # Policy parameter name (mandatory)
-        DisplayName = 'Windows service startup type'                 # Policy parameter display name (mandatory)
-        Description = "Startup type of the Windows service"          # Policy parameter description (optional)
-        ResourceType = "Service"                                     # DSC configuration resource type (mandatory). Get this value from the AuditWindowsService.ps1 file.
-        ResourceId = 'Ensure Windows service is in a desired state'  # DSC configuration resource property name (mandatory). Get this value from the AuditWindowsService.ps1 file.
-        ResourcePropertyName = "StartupType"                         # DSC configuration resource property name (mandatory). Get this value from the AuditWindowsService.ps1 file.
-        DefaultValue = 'Automatic'                                   # Policy parameter default value (optional)
-        AllowedValues = @('Automatic', 'Manual', 'Disabled')         # Policy parameter allowed values (optional)
+        Name = ''                         # Policy parameter name (mandatory)
+        DisplayName = ''                  # Policy parameter display name (mandatory)
+        Description = ''                  # Policy parameter description (optional)
+        ResourceType = ''                 # DSC configuration resource type (mandatory). Get this value from the AuditLinuxCronjob.ps1 file.
+        ResourceId = ''                   # DSC configuration resource property name (mandatory). Get this value from the AuditLinuxCronjob.ps1 file.
+        ResourcePropertyName = ''         # DSC configuration resource property name (mandatory). Get this value from the AuditLinuxCronjob.ps1 file.
+        DefaultValue = ''                 # Policy parameter default value (optional)
     }
 )
 #>
@@ -158,19 +148,19 @@ $policyParameters = @(
 # Create the Guest Configuration Policy
 New-GuestConfigurationPolicy `
     -ContentUri $uri `
-    -DisplayName 'Guest Configuration Demo - Audit Windows Service' `
-    -Description 'Audit if a Windows Service is in a desired state.' `
-    -Path './AuditWindowsService/PolicyDefinitions' `
-    -Platform 'Windows' `
+    -DisplayName 'Guest Configuration Demo - Audit Linux Cronjob' `
+    -Description 'Audit if a Linux Cronjob is set.' `
+    -Path './AuditLinuxCronjob/PolicyDefinitions' `
+    -Platform 'Linux' `
     -Parameter $policyParameters `
     -Version 1.0.0 `
     -Verbose
 
 # Publish the Guest Configuration Policy
-Publish-GuestConfigurationPolicy -Path './AuditWindowsService/PolicyDefinitions' -Verbose
+Publish-GuestConfigurationPolicy -Path './AuditLinuxCronjob/PolicyDefinitions' -Verbose
 
 # Display the Guest Configuration Policy
-(Get-AzPolicyDefinition | Where-Object {$_.Properties.DisplayName -like "*Guest Configuration Demo - Audit Windows Service"}).Properties
+(Get-AzPolicyDefinition | Where-Object {$_.Properties.DisplayName -like "*Guest Configuration Demo - Audit Linux Cronjob"}).Properties
 
 # If you want to update a Guest Configuration policy, it should work just fine. You can see that the metadata property changes when the policy is updated:
 # createdOn=2020-06-24T09:25:43.0301822Z; updatedOn=2020-06-24T10:53:13.9929041Z
@@ -178,12 +168,12 @@ Publish-GuestConfigurationPolicy -Path './AuditWindowsService/PolicyDefinitions'
 
 # Congratulations!
 # The Guest Configuration Policy Definitions and Policy Definition Set should now be visible in the Azure Portal.
-# You can test with it by creating a new Windows Server Virtual Machine and assigning the policy definition set to the Resource Group of the VM
+# You can test with it by creating a new Linux Virtual Machine and assigning the policy definition set to the Resource Group of the VM
 # Open the README.md for more details
 
 <# Cleanup the environment
     Remove-AzStorageAccount -Name $storageAccountName -ResourceGroupName $resourceGroupName
     Remove-AzResourceGroup -Name $resourceGroupName
-    Get-AzPolicySetDefinition | Where-Object {$_.Properties.DisplayName -like "*Guest Configuration Demo - Audit Windows Service"} | Remove-AzPolicySetDefinition
-    Get-AzPolicyDefinition | Where-Object {$_.Properties.DisplayName -like "*Guest Configuration Demo - Audit Windows Service"} | Remove-AzPolicyDefinition
+    Get-AzPolicySetDefinition | Where-Object {$_.Properties.DisplayName -like "*Guest Configuration Demo - Audit Linux Cronjob"} | Remove-AzPolicySetDefinition
+    Get-AzPolicyDefinition | Where-Object {$_.Properties.DisplayName -like "*Guest Configuration Demo - Audit Linux Cronjob"} | Remove-AzPolicyDefinition
 #>
