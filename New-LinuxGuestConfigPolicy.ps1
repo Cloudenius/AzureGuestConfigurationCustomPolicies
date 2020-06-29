@@ -28,6 +28,9 @@ Install-Module -Name GuestConfiguration -RequiredVersion 1.19.4
 .\AuditLinuxCronjob\AuditLinuxCronjob.ps1
 
 # The following cmdlet will create the policy package in the AuditLinuxCronjob/Package folder. It will create the AuditLinuxCronjob.zip file and also the unzippedPackage folder
+# I've had some issues with PowerShell Core v7 and running the command below. In PowerShell it runs fine.
+# PowerShell Core was stuck at 'Loading default CIM keywords - Processing'
+# PowerShell ISE was stuck at 'Loading default CIM keywords - Processing' + 'Getting module list - Processing' + 'Getting resource list - Processing'
 New-GuestConfigurationPackage `
     -Name 'AuditLinuxCronjob' `
     -Configuration './AuditLinuxCronjob/CompiledPolicy/AuditLinuxCronjob.mof' `
